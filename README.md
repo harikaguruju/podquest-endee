@@ -1,27 +1,27 @@
-# PodQuest – Podcast Search System
+# PodQuest – Podcast Semantic Search System
 
 ## 📌 Problem Statement
-Long podcast episodes contain valuable insights, but it is difficult to quickly find where a specific topic is discussed. Manual searching is slow and inefficient.
+Long podcast episodes contain valuable insights, but users cannot quickly find where a specific topic is discussed. Manual searching is slow and inefficient.
 
-This project solves that problem by converting podcast audio into searchable text with timestamps.
+This project solves the problem by making podcast audio semantically searchable with timestamped results.
 
 ---
 
 ## 🚀 Project Overview
-PodQuest is an AI-powered system that allows users to:
-- Upload podcast audio files
-- Convert audio into text using speech recognition
-- Search for topics within podcasts
-- Get exact timestamps where topics are discussed
+PodQuest is an AI-powered system that:
+- Converts podcast audio into text
+- Indexes the content using vector embeddings
+- Enables semantic search across episodes
+- Returns exact timestamps for relevant results
 
 ---
 
 ## ⚙️ Features
-- 🎧 Audio upload (MP3, WAV)
+- 🎧 Upload podcast audio (MP3, WAV)
 - 📝 Automatic transcription using Faster-Whisper
-- 🔍 Semantic search using embeddings
-- ⏱ Timestamp-based results
-- 📊 Clean UI using Streamlit
+- 🔍 Semantic search using vector embeddings
+- ⏱ Timestamp-based retrieval
+- 📊 Interactive UI using Streamlit
 
 ---
 
@@ -30,18 +30,19 @@ PodQuest is an AI-powered system that allows users to:
 - Streamlit
 - Faster-Whisper
 - Sentence Transformers
-- ChromaDB
+- **Endee (Vector Database)**
 - NumPy / Pandas
 
 ---
 
-## 🔄 How It Works
-1. Upload podcast audio
-2. Audio is transcribed into text
-3. Text is split into chunks
-4. Chunks are converted into embeddings
-5. Stored in vector database (ChromaDB)
-6. User searches → relevant chunks retrieved with timestamps
+## 🔄 System Architecture
+1. **Ingestion** – Upload audio files  
+2. **Transcription** – Convert audio → text using Whisper  
+3. **Chunking** – Split transcript into smaller segments  
+4. **Embedding** – Convert text chunks into vectors  
+5. **Indexing (Endee)** – Store embeddings in Endee vector database  
+6. **Retrieval** – Search relevant chunks using semantic similarity  
+7. **Response** – Return transcript + timestamps  
 
 ---
 
