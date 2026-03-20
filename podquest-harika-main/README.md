@@ -1,40 +1,65 @@
-# podquest-harika
-Problem Statement
+# Podcast Search System using Endee-style Vector Database
 
-Long podcast episodes contain valuable insights, but users can’t quickly locate where a topic is discussed. Manual scrubbing is slow and error-prone. We need a system that makes podcasts semantically searchable and returns timestamped evidence across episodes.
+## Problem Statement
 
-Long podcasts are hard to navigate. Users need to find where a topic was discussed, with evidence (timestamps). Manual scrubbing is slow and inaccurate.
+Long podcast episodes contain valuable insights, but users often struggle to quickly locate where a specific topic is discussed. Manual searching through audio is time-consuming and inefficient.
 
-Why Multi-Agent
+This project solves that problem by converting audio into text and enabling semantic search with timestamped results.
 
-The pipeline is naturally modular: ingesting audio, transcribing, chunking, embedding, indexing, retrieval, and quality checks are distinct expert roles. Specialized agents working in parallel improve speed, reliability, and maintainability. A supervisor coordinates them, retries failures, and enforces quality (e.g., “include timestamps” guardrails).
-The pipeline (ingest → transcription → chunking → indexing → retrieval → QA) maps naturally to specialized agents. Multi-agent orchestration improves speed (parallel steps), quality (specialists), and reliability (supervisor & guardrails).
+---
 
-Application
+## Overview
 
-Streamlit app to upload podcasts, transcribe to timestamped text, index as vectors, and semantically search topics across episodes. Results include episode + timestamped transcript.
+This system allows users to upload podcast audio, convert it into text, and perform semantic search across transcripts. Instead of relying on keyword matching, it retrieves results based on meaning using vector embeddings.
 
-Agents & Interaction
+---
 
-Supervisor → coordinates flow, retries failures
+## System Design
 
-Ingestion → validates/normalizes audio
+The pipeline consists of the following steps:
 
-Transcription → Faster-Whisper → JSON segments
+1. Audio Ingestion (MP3/WAV files)
+2. Speech-to-Text conversion using Whisper
+3. Text chunking with timestamps
+4. Embedding generation using Sentence Transformers
+5. Storage of embeddings using Endee-style vector storage
+6. Query embedding and similarity search
+7. Retrieval of top relevant results with timestamps
 
-Segmentation/Indexing → chunk + embed (Sentence-Transformers), upsert to ChromaDB
+---
 
-Retrieval/Q&A → semantic search + extractive response
+## How Endee is Used
 
-Evaluation/Guardrails → verify timestamps and citation to transcripts
+In this project, Endee is used as the conceptual vector database layer. Instead of using external vector databases, embeddings are stored locally in structured formats (.npy and .json).
 
-Technologies used
+This demonstrates how vector databases like Endee manage embeddings and perform efficient similarity-based retrieval.
 
-Python, Streamlit, Faster-Whisper, Sentence-Transformers, ChromaDB, CrewAI (or LangGraph), pydub/ffmpeg, numpy/pandas
+---
 
-LLMs
+## Features
 
-Ideal: GPT-4o-mini / Claude 3.5 Sonnet / Gemini 1.5 Pro
+- Audio to text transcription
+- Semantic search over podcast transcripts
+- Timestamp-based search results
+- Efficient embedding storage and retrieval
 
-Free: Gemini 1.5 Flash (free tier) or Llama 3.1 8B via Ollama
-Choose based on cost, latency, and reliability; the LLM mainly formats/coordinates since retrieval is embedding-based.
+---
+
+## Tech Stack
+
+- Python  
+- Streamlit  
+- Faster-Whisper  
+- Sentence Transformers  
+- NumPy  
+- Endee-style vector storage  
+
+---
+
+## Setup Instructions
+
+```bash
+git clone https://github.com/harikaguruju/podquest-endee.git
+cd podquest-endee
+pip install -r requirements.txt
+streamlit run app.py
