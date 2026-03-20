@@ -66,12 +66,11 @@ if existing:
     if pick:
         data = read_transcript(pick)
         st.text_area("Transcript", value=data["text"], height=200)
-
 else:
     st.info("No transcripts available")
 
 # -------------------------------
-# 🔹 Indexing (Endee-style)
+# 🔹 Indexing
 # -------------------------------
 st.markdown("---")
 st.header("📦 Create Vector Index")
@@ -90,13 +89,15 @@ st.header("🔍 Search Podcasts")
 query = st.text_input("Enter your question")
 
 if query:
-    results = search(query)
+    with st.spinner("Searching..."):
+        results = search(query)
 
     if results:
         for r in results:
             st.subheader(f"📌 Episode: {r['episode']}")
             st.write(f"⏱ {r['start']} - {r['end']}")
             st.write(f"⭐ Score: {r['score']:.4f}")
+            st.write(f"📝 {r['text']}")
             st.markdown("---")
     else:
         st.warning("No results found")
