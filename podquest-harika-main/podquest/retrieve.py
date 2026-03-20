@@ -1,44 +1,43 @@
+import json
+import numpy as np
 from typing import List, Dict, Any
-import chromadb
 from sentence_transformers import SentenceTransformer
-from .config import EMBEDDING_MODEL, CHROMA_COLLECTION, CHROMA_DIR, TOP_K, SCORE_THRESHOLD
-from .utils import sec_to_hhmmss
+from .config import EMBEDDING_MODEL
 
-def _coll():
-    client = chromadb.PersistentClient(path=CHROMA_DIR)
-    return client.get_collection(CHROMA_COLLECTION)
+# Load saved embeddings and metadata
+def load_data():
+    embeddings = np.load("endee_embeddings.npy")
+    with open("endee_metadata.json", "r") as f:
+        metadata = json.load(f)
+    return embeddings, metadata
 
-def _embed(q: str):
+# Cosine similarity
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+# Search function
+def search(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    embeddings, metadata = load_data()
+
     model = SentenceTransformer(EMBEDDING_MODEL)
-    return model.encode([q], convert_to_numpy=True, normalize_embeddings=True)[0]
 
-def search(query: str, top_k: int = TOP_K, score_thr: float = SCORE_THRESHOLD) -> List[Dict[str, Any]]:
-    coll = _coll()
-    vec = _embed(query)
-    res = coll.query(query_embeddings=[vec], n_results=top_k*2)
+    # Convert query to embedding
+    query_emb = model.encode(query, convert_to_numpy=True, normalize_embeddings=True)
 
-    out = []
-    for i in range(len(res["ids"][0])):
-        d = float(res["distances"][0][i])
-        if d <= score_thr:
-            meta = res["metadatas"][0][i]
-            out.append({
-                "score": d,
-                "text": res["documents"][0][i],
-                "episode": meta.get("episode"),
-                "audio_file": meta.get("audio_file"),
-                "start": meta.get("start"),
-                "end": meta.get("end"),
-                "start_hms": sec_to_hhmmss(meta.get("start", 0)),
-                "end_hms": sec_to_hhmmss(meta.get("end", 0))
-            })
-    out.sort(key=lambda x: x["score"])
-    return out[:top_k]
+    # Compute similarity
+    scores = []
+    for i, emb in enumerate(embeddings):
+        sim = cosine_similarity(query_emb, emb)
+        scores.append((sim, i))
 
-def synthesize_answer(query: str, hits: List[Dict[str, Any]]) -> str:
-    if not hits:
-        return "No strong matches found. Try rephrasing or lower the strictness."
-    lines = []
-    for h in hits:
-        lines.append(f"[{h['episode']}] {h['start_hms']}–{h['end_hms']}: {h['text']}")
-    return "Relevant mentions across episodes:\n\n" + "\n".join("- " + l for l in lines)
+    # Sort by similarity
+    scores = sorted(scores, reverse=True, key=lambda x: x[0])
+
+    # Get top results
+    results = []
+    for score, idx in scores[:top_k]:
+        item = metadata[idx]
+        item["score"] = float(score)
+        results.append(item)
+
+    return results
