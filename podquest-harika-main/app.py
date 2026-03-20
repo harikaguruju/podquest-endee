@@ -1,15 +1,21 @@
-# app.py (only the relevant bits)
-import os, time, json
+import os, json
 import streamlit as st
+from pathlib import Path
 
 from podquest.transcribe import transcribe_file, read_transcript
 from podquest.config import DEFAULT_WHISPER_MODEL, DEFAULT_COMPUTE_TYPE
-from pathlib import Path
+from podquest.indexer import build_index
+from podquest.retrieve import search
 
 TRANSCRIPTS_DIR = Path("transcripts")
 TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
 
-st.title("Ingest & Transcribe")
+st.title("🎙 Podcast Search System")
+
+# -------------------------------
+# 🔹 Upload Section
+# -------------------------------
+st.header("Ingest & Transcribe")
 
 uploaded_files = st.file_uploader(
     "Upload episodes", type=["mp3", "wav"], accept_multiple_files=True
@@ -25,7 +31,9 @@ if uploaded_files:
         st.success(f"Saved: {save_path}")
         saved_paths.append(str(save_path))
 
-# --- Transcribe everything that was just uploaded ---
+# -------------------------------
+# 🔹 Transcription
+# -------------------------------
 if st.button("Transcribe all") and saved_paths:
     for p in saved_paths:
         with st.spinner(f"Transcribing {os.path.basename(p)} ..."):
@@ -37,53 +45,58 @@ if st.button("Transcribe all") and saved_paths:
             )
         st.success(f"Saved transcript: {result['json_path']}")
 
-        # Show the transcript text right away
         st.subheader(f"Transcript: {os.path.basename(result['json_path'])}")
-        st.text_area(
-            "Full transcript",
-            value=result["text"],
-            height=220,
-            key=f"ta_{result['json_path']}",
-        )
+        st.text_area("Full transcript", value=result["text"], height=220)
 
-        # Optional: show segments table
-        if st.checkbox("Show segments with timestamps", key=f"cb_{result['json_path']}"):
-            import pandas as pd
-            st.dataframe(pd.DataFrame(result["segments"]))
-
-        # Download buttons
-        st.download_button(
-            label="Download .txt",
-            data=result["text"],
-            file_name=os.path.basename(result["json_path"]).replace(".json", ".txt"),
-            mime="text/plain",
-            key=f"dl_txt_{result['json_path']}",
-        )
-        st.download_button(
-            label="Download .json",
-            data=json.dumps({"segments": result["segments"]}, ensure_ascii=False, indent=2),
-            file_name=os.path.basename(result["json_path"]),
-            mime="application/json",
-            key=f"dl_json_{result['json_path']}",
-        )
-
+# -------------------------------
+# 🔹 View Existing Transcripts
+# -------------------------------
 st.markdown("---")
+st.header("View Transcripts")
 
-# --- Viewer: open any existing transcript from /transcripts ---
 existing = sorted([p for p in TRANSCRIPTS_DIR.glob("*.json")])
+
 if existing:
     pick = st.selectbox(
-        "Open an existing transcript",
+        "Select transcript",
         options=[str(p) for p in existing],
         format_func=lambda p: os.path.basename(p),
     )
+
     if pick:
         data = read_transcript(pick)
-        st.subheader(f"Transcript: {os.path.basename(pick)}")
-        st.text_area("Full transcript", value=data["text"], height=220, key=f"view_{pick}")
+        st.text_area("Transcript", value=data["text"], height=200)
 
-        if st.checkbox("Show segments with timestamps", key=f"seg_view_{pick}"):
-            import pandas as pd
-            st.dataframe(pd.DataFrame(data["segments"]))
 else:
-    st.info("No saved transcripts yet. Upload audio and click **Transcribe all**.")
+    st.info("No transcripts available")
+
+# -------------------------------
+# 🔹 Indexing (Endee-style)
+# -------------------------------
+st.markdown("---")
+st.header("📦 Create Vector Index")
+
+if st.button("Create Index"):
+    with st.spinner("Indexing transcripts..."):
+        count, _ = build_index(str(TRANSCRIPTS_DIR))
+    st.success(f"Indexed {count} chunks successfully")
+
+# -------------------------------
+# 🔹 Search Section
+# -------------------------------
+st.markdown("---")
+st.header("🔍 Search Podcasts")
+
+query = st.text_input("Enter your question")
+
+if query:
+    results = search(query)
+
+    if results:
+        for r in results:
+            st.subheader(f"📌 Episode: {r['episode']}")
+            st.write(f"⏱ {r['start']} - {r['end']}")
+            st.write(f"⭐ Score: {r['score']:.4f}")
+            st.markdown("---")
+    else:
+        st.warning("No results found")
