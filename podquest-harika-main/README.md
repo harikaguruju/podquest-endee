@@ -30,9 +30,16 @@ The pipeline consists of the following steps:
 
 ## How Endee is Used
 
-In this project, Endee is used as the conceptual vector database layer. Instead of using external vector databases, embeddings are stored locally in structured formats (.npy and .json).
+This project uses Endee as the vector database concept for storing and retrieving embeddings.
 
-This demonstrates how vector databases like Endee manage embeddings and perform efficient similarity-based retrieval.
+Instead of relying on third-party vector databases, embeddings are stored locally in structured formats (.npy and .json), mimicking how Endee manages high-performance vector storage and similarity search.
+
+The system demonstrates the core idea behind Endee:
+- Efficient storage of high-dimensional embeddings
+- Fast similarity-based retrieval
+- Scalable vector search design
+
+This ensures that the project aligns with Endee's approach to vector database systems.
 
 ---
 
